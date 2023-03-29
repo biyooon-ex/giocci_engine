@@ -1,7 +1,7 @@
 # GiocciEngine
 
 ## 起動方法
-start_node.sh ファイルを実行後、GiocciRelayに Node.connect() すると起動完了となります。
+start_node.sh ファイルを実行後、`mix deps.get` を実行後、GiocciRelayに Node.connect() すると起動完了となります。
 
 ### 準備
 `start_node.sh` をエディタで開き、実際の内容に修正します。
@@ -44,6 +44,13 @@ MY_PROCESS_NAME="${MY_PROCESS_NAME}" iex \
   --name "${NODE_NAME}@${NODE_IPADDR}" \
   --cookie "${COOKIE}" \
   --erl "-kernel inet_dist_listen_min ${INET_DIST_LISTEN_MIN} inet_dist_listen_max ${INET_DIST_LISTEN_MAX}" -S mix
+```
+
+### 起動の準備
+`mix deps.get` を実行します。
+
+```sh
+$ mix deps.get
 ```
 
 ### 起動
