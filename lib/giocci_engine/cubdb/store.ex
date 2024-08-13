@@ -35,6 +35,13 @@ defmodule GiocciEngine.Cubdb.Store do
   end
 
   @impl true
+  def handle_call({:module_save, encode_module}, _from, state) do
+    module_save_reply = module_load_and_save({:module_save, encode_module})
+
+    {:reply, module_save_reply, state}
+  end
+
+  @impl true
   def handle_cast({:delete, vcontact_id}, state) do
     delete(vcontact_id)
 
@@ -119,6 +126,15 @@ defmodule GiocciEngine.Cubdb.Store do
 
   def list() do
     CubDB.select(Database) |> Enum.to_list()
+  end
+
+  def module_load_and_save({:module_save, encode_module}) do
+    {name, binary, path} =
+      Giocci.CLI.ModuleConverter.decode(encode_module)
+
+    Logger.info("v module: #{inspect(name)} is loaded.")
+
+    Giocci.CLI.ModuleConverter.load({name, binary, path})
   end
 
   def put(vcontact_id, vcontact_element) do
