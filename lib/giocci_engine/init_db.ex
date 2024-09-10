@@ -1,14 +1,27 @@
 defmodule GiocciEngine.InitDb do
   alias GiocciEngine.Database
+  alias GiocciEngine.ModuleDB
 
-  def start() do
-    init_map = init_map()
-
-    CubDB.clear(Database)
-    CubDB.put_multi(Database, Map.to_list(init_map))
+  def all() do
+    database()
+    module_db()
   end
 
-  defp init_map() do
+  def database() do
+    init_database_map = init_database()
+
+    CubDB.clear(Database)
+    CubDB.put_multi(Database, Map.to_list(init_database_map))
+  end
+
+  def module_db() do
+    init_module_db_map = init_module_db()
+
+    CubDB.clear(ModuleDB)
+    CubDB.put_multi(ModuleDB, Map.to_list(init_module_db_map))
+  end
+
+  defp init_database() do
     %{
       A34566369DFF4BB0A83B93B6B135BC8C: %{
         attr_device: "led",
@@ -39,5 +52,9 @@ defmodule GiocciEngine.InitDb do
         node_name: {:global, :node2}
       }
     }
+  end
+
+  defp init_module_db() do
+    %{}
   end
 end

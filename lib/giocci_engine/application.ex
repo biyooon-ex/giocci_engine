@@ -12,8 +12,12 @@ defmodule GiocciEngine.Application do
     children = [
       # Starts a worker by calling: GiocciEngine.Worker.start_link(arg)
       # {GiocciEngine.Worker, arg}
-      Supervisor.child_spec({CubDB, [data_dir: "./cubdb/database", name: GiocciEngine.Database]}, id: :database),
-      Supervisor.child_spec({CubDB, [data_dir: "./cubdb/module_db", name: GiocciEngine.ModuleDB]}, id: :module_db),
+      Supervisor.child_spec({CubDB, [data_dir: "./cubdb/database", name: GiocciEngine.Database]},
+        id: :database
+      ),
+      Supervisor.child_spec({CubDB, [data_dir: "./cubdb/module_db", name: GiocciEngine.ModuleDB]},
+        id: :module_db
+      ),
       {GiocciEngine.Cubdb.Store, [my_process_name, []]}
     ]
 
