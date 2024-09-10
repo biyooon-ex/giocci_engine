@@ -5,6 +5,7 @@ defmodule GiocciEngine.Cubdb.Store do
   require Logger
 
   alias GiocciEngine.Database
+  alias GiocciEngine.ModuleDB
 
   #
   # Client API
@@ -32,6 +33,13 @@ defmodule GiocciEngine.Cubdb.Store do
     current_list = list()
 
     {:reply, current_list, state}
+  end
+
+  @impl true
+  def handle_call({:module_save, encode_module}, _from, state) do
+    module_save_reply = module_load_and_save({:module_save, encode_module})
+
+    {:reply, module_save_reply, state}
   end
 
   @impl true
@@ -99,6 +107,25 @@ defmodule GiocciEngine.Cubdb.Store do
     CubDB.delete(Database, vcontact_id)
   end
 
+  def get_datetime() do
+    {{year, month, day}, {time, min, sec}} = :calendar.local_time()
+
+    datetime =
+      "#{year}" <>
+        "/" <>
+        String.pad_leading("#{month}", 2, "0") <>
+        "/" <>
+        String.pad_leading("#{day}", 2, "0") <>
+        " " <>
+        String.pad_leading("#{time}", 2, "0") <>
+        ":" <>
+        String.pad_leading("#{min}", 2, "0") <>
+        ":" <>
+        String.pad_leading("#{sec}", 2, "0")
+
+    datetime
+  end
+
   def gen_uuid() do
     reg_is_digit = ~r/[[:alpha:]]/
     uuid = Uniq.UUID.uuid4(:hex)
@@ -114,11 +141,28 @@ defmodule GiocciEngine.Cubdb.Store do
   end
 
   def init_db() do
-    GiocciEngine.InitDb.start()
+    GiocciEngine.InitDb.all()
   end
 
   def list() do
     CubDB.select(Database) |> Enum.to_list()
+  end
+
+  def module_load_and_save({:module_save, encode_module}) do
+    {name, binary, path} =
+      Giocci.CLI.ModuleConverter.decode(encode_module)
+
+    Logger.info("v module: #{inspect(name)} is loaded.")
+
+    name_snake =
+      name
+      |> Module.split()
+      |> Enum.join("_")
+      |> String.to_atom()
+
+    CubDB.put(ModuleDB, name_snake, %{encode_module: encode_module, register_at: get_datetime()})
+
+    Giocci.CLI.ModuleConverter.load({name, binary, path})
   end
 
   def put(vcontact_id, vcontact_element) do

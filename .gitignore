@@ -27,3 +27,6 @@ giocci_engine-*.tar
 
 # CubDB files
 /cubdb/
+
+# color theme
+.vscode/settings.json
