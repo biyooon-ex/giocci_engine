@@ -168,4 +168,37 @@ defmodule GiocciEngine.Cubdb.Store do
   def put(vcontact_id, vcontact_element) do
     CubDB.put(Database, vcontact_id, vcontact_element)
   end
+
+
+
+  defp callback(m) do
+    # ここで時間のlogを取りたい？
+    msg = m |> String.trim        ##msgをバイナリからlistに変換
+      |> Base.decode64!
+      |> :erlang.binary_to_list
+    case msg do
+      [function_binary , arity_binary, :module_exec]=msg  -> ##module_execの場合
+        function = function_binary|> String.trim  |> Base.decode64!  |> :erlang.binary_to_term
+        arity = arity_binary |> String.trim  |> Base.decode64!|> :erlang.binary_to_term
+        module_result_reply = Code.eval_string(function,arity)
+  #  module_exec
+        session = GenServer.call(__MODULE__, :call_session)
+        {:ok, publisher} = Session.declare_publisher(session, "from/engine/to/relay")
+        Publisher.put(publisher , module_result_reply |> :erlang.term_to_binary() |> Base.encode64())
+
+
+
+      [encode_module , :module_save] = msg  -> ##module_saveの場合
+        module_save_reply = module_load_and_save({:module_save, encode_module}) ##Module_Saveを実行しModuleを送る
+        session = GenServer.call(__MODULE__, :call_session)
+        {:ok, publisher} = Zenohex.Session.declare_publisher(session, "from/engine/to/relay")
+        PZenohex.ublisher.put(publisher , module_save_reply |> :erlang.term_to_binary() |> Base.encode64())
+      _  =msg ->
+       IO.inspect("no match")
+    end
+
+  end
+
+
+
 end
