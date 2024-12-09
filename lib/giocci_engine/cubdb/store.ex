@@ -170,6 +170,7 @@ defmodule GiocciEngine.Cubdb.Store do
   end
 
   defp callback(state, m) do
+    ## Clientから送られたデータを解析して、実行する
     # ここで時間のlogを取りたい？
     %{
       key_expr: erkey,
@@ -178,25 +179,23 @@ defmodule GiocciEngine.Cubdb.Store do
       reference: reference
     } = m
 
-    ## msgをバイナリからlistに変換
+    ## msgをバイナリからlistにもどす
     msg =
       msgint
       |> String.trim()
       |> Base.decode64!()
       |> :erlang.binary_to_term()
 
-    IO.inspect(msg)
+    # IO.inspect(msg)
 
     case msg do
       ## module_execの場合
       [module, function, arity, :module_exec] = msg ->
         # function =
-        #   function_binary |> String.trim() |> Base.decode64!() |> :erlang.binary_to_term()
-
-        # arity = arity_binary |> String.trim() |> Base.decode64!() |> :erlang.binary_to_term()
+        #  module_execする
         module_result_reply = apply(module, function, arity)
-        #  module_exec
 
+        ## 実行結果を(Relayを通して)Clientに返す
         Zenohex.Publisher.put(
           state.publisher,
           (module_result_reply <> " from engine") |> :erlang.term_to_binary() |> Base.encode64()
@@ -204,9 +203,9 @@ defmodule GiocciEngine.Cubdb.Store do
 
       ## module_saveの場合
       [encode_module, :module_save] = msg ->
-        ## Module_Saveを実行しModuleを送る
+        ## Module_Saveを保存しロードする
         module_save_reply = module_load_and_save({:module_save, encode_module})
-
+        ## ロード結果を(Relayを通して)Clientに返す
         Zenohex.Publisher.put(
           state.publisher,
           module_save_reply |> :erlang.term_to_binary() |> Base.encode64()
@@ -220,11 +219,13 @@ defmodule GiocciEngine.Cubdb.Store do
   @spec start_link_session_rer() ::
           {:ok, %{callback: (any() -> any()), id: RERsession, subscriber: Zenohex.Subscriber.t()}}
   def start_link_session_rer() do
-    ## RelayのZenohセッションを起動
+    ## EngineのZenohセッションを起動
     {:ok, session} = Zenohex.open()
+    ## pub,subそれぞれのキーをたてる
+
     {:ok, subscriber} = Zenohex.Session.declare_subscriber(session, "from/relay/to/engine")
     {:ok, publisher} = Zenohex.Session.declare_publisher(session, "from/engine/to/relay")
-
+    ## 状態として次の状態をもつ
     state = %{
       publisher: publisher,
       subscriber: subscriber,
@@ -233,54 +234,35 @@ defmodule GiocciEngine.Cubdb.Store do
       session: session
     }
 
+    ## 上記の状態を保存する用のGenServerの起動
     GenServer.start_link(__MODULE__, state, name: RERsession)
-
+    ## subの開始
     recv_timeout(state)
     {:ok, state}
   end
 
-  # def init(session) do
-  #   IO.inspect("pass")
-  #   {:ok, session}
-  # end
-
-  # def handle_call(:call_session, _from, state) do
-  #   session = state.session
-  #   {:reply, session, state}
-  # end
-
   def handle_info(:loop, state) do
+    # subをループするhandle_info
     recv_timeout(state)
     {:noreply, state}
   end
 
   def setup_engine do
-    ## GenServerにsession情報を保存
+    ## Relayからの要請の結果をRelayに返送するsubとpubをセットアップする
     {:ok, statee} = start_link_session_rer()
-    # {:ok, statec} = start_link_session_cre()
-    # sessioncl = GenServer.call(CRsession,:call_session)
-    # sessionen = GenServer.call(ERsession,:call_session)
-    ## ClientからRelay，EngineからRelayへののサブスクライブの準備
-
-    # GenServer.cast(pide, {:sub_start,"from/client/to/relay"})
-    # {:ok, subscribercl} = Zenohex.Session.declare_subscriber(sessioncl, "from/client/to/relay" )
-    # {:ok, subscriberen} = Zenohex.Session.declare_subscriber(sessionen, "from/engine/to/relay" )
-
-    # {:ok, msg} = Zenohex.Subscriber.recv_timeout(subscriberen,10000000)
-    # {:ok, msg} = Zenohex.Subscriber.recv_timeout(subscribercl,50000000)
   end
 
   defp recv_timeout(state) do
-    IO.inspect(state.id)
+    ## subを永続化する関数
+    # IO.inspect(state.id)
 
-    # GenServer.cast(ERsession, {:sub_start,"from/client/to/relay"})
-    case Zenohex.Subscriber.recv_timeout(state.subscriber, 10_000_000) do
+    case Zenohex.Subscriber.recv_timeout(state.subscriber, 10_000) do
       {:ok, sample} ->
         state.callback.(state, sample)
         send(state.id, :loop)
 
       {:error, :timeout} ->
-        IO.inspect("pass")
+        # IO.inspect("pass")
         send(state.id, :loop)
 
       {:error, error} ->
