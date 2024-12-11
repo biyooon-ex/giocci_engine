@@ -171,7 +171,6 @@ defmodule GiocciEngine.Cubdb.Store do
 
   defp callback(state, m) do
     ## Clientから送られたデータを解析して、実行する
-    # ここで時間のlogを取りたい？
     %{
       key_expr: erkey,
       value: msgint,
@@ -186,12 +185,9 @@ defmodule GiocciEngine.Cubdb.Store do
       |> Base.decode64!()
       |> :erlang.binary_to_term()
 
-    # IO.inspect(msg)
-
     case msg do
       ## module_execの場合
       [module, function, arity, :module_exec] = msg ->
-        # function =
         #  module_execする
         module_result_reply = apply(module, function, arity)
 
@@ -254,7 +250,6 @@ defmodule GiocciEngine.Cubdb.Store do
 
   defp recv_timeout(state) do
     ## subを永続化する関数
-    # IO.inspect(state.id)
 
     case Zenohex.Subscriber.recv_timeout(state.subscriber, 10_000) do
       {:ok, sample} ->
@@ -262,7 +257,6 @@ defmodule GiocciEngine.Cubdb.Store do
         send(state.id, :loop)
 
       {:error, :timeout} ->
-        # IO.inspect("pass")
         send(state.id, :loop)
 
       {:error, error} ->
