@@ -27,7 +27,7 @@ defmodule GiocciEngine.MixProject do
       {:cubdb, "~> 2.0.1"},
       {:giocci, "~> 0.2.1"},
       {:uniq, "~> 0.1"},
-      {:zenohex, "~> 0.3.2"},
+      {:zenohex, "~> 0.3.2"}
     ]
   end
 end
