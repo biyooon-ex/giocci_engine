@@ -212,9 +212,10 @@ defmodule GiocciEngine.Cubdb.Store do
     end
   end
 
-  @spec start_link_session_rer() ::
+  @spec start_link() ::
           {:ok, %{callback: (any() -> any()), id: RERsession, subscriber: Zenohex.Subscriber.t()}}
-  def start_link_session_rer() do
+  def start_link() do
+    ## RelayからEngineを通ってRelayに返送するsubとpubをセットアップする
     ## EngineのZenohセッションを起動
     {:ok, session} = Zenohex.open()
     ## pub,subそれぞれのキーをたてる
@@ -241,11 +242,6 @@ defmodule GiocciEngine.Cubdb.Store do
     # subをループするhandle_info
     recv_timeout(state)
     {:noreply, state}
-  end
-
-  def setup_engine do
-    ## Relayからの要請の結果をRelayに返送するsubとpubをセットアップする
-    {:ok, statee} = start_link_session_rer()
   end
 
   defp recv_timeout(state) do
