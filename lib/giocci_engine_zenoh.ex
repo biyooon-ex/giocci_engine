@@ -6,6 +6,23 @@ defmodule GiocciEngineZenoh do
 
   alias GiocciEngine.ModuleDB
 
+  def setup_engine do
+    relay_number_string = System.get_env("NODE_RELAY_NUMBER")
+    relay_number = String.to_integer(relay_number_string)
+    create_session(relay_number)
+  end
+
+  def create_session(0) do
+    :ok
+  end
+
+  def create_session(n) do
+    number = Integer.to_string(n)
+    relay_name = System.get_env("NODE_RELAY_NAME" <> number)
+    start_link(relay_name)
+    create_session(n - 1)
+  end
+
   def module_load_and_save({:module_save, encode_module}) do
     {name, binary, path} =
       Giocci.CLI.ModuleConverter.decode(encode_module)
@@ -114,6 +131,7 @@ defmodule GiocciEngineZenoh do
       session: session
     }
 
+    IO.inspect("from/" <> relay_name <> "/to/" <> engine_name)
     ## 上記の状態を保存する用のGenServerの起動
     GenServer.start_link(__MODULE__, state, name: Relay2Engine2Relaysession)
     ## subの開始
