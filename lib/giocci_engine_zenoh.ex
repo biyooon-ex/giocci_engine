@@ -7,6 +7,7 @@ defmodule GiocciEngineZenoh do
   alias GiocciEngine.ModuleDB
 
   def setup_engine do
+    ## 最初に指定された数のRelayノードとのZenohコネクションを作成する
     relay_number_string = System.get_env("NODE_RELAY_NUMBER")
     relay_number = String.to_integer(relay_number_string)
     create_session(relay_number)
@@ -122,6 +123,7 @@ defmodule GiocciEngineZenoh do
   end
 
   defp create_session(n) do
+    ## セッションをｎ個作る関数
     number = Integer.to_string(n)
     relay_name = System.get_env("NODE_RELAY_NAME" <> number)
     start_link(relay_name, number)
