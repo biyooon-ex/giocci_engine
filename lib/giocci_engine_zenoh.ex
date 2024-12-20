@@ -6,20 +6,13 @@ defmodule GiocciEngineZenoh do
 
   alias GiocciEngine.ModuleDB
 
-  def setup_engine do
+  def setup_engine() do
     ## 最初に指定された数のRelayノードとのZenohコネクションを作成する
     relay_number_string = System.get_env("NODE_RELAY_NUMBER")
     relay_number = String.to_integer(relay_number_string)
     create_session(relay_number)
   end
 
-  @spec start_link(any(), any()) ::
-          {:ok,
-           %{
-             callback: (any() -> any()),
-             id: Relay2Engine2Relaysession,
-             subscriber: Zenohex.Subscriber.t()
-           }}
   def start_link(relay_name, number) do
     ## RelayからEngineを通ってRelayに返送するsubとpubをセットアップする
     ## EngineのZenohセッションを起動
@@ -43,12 +36,11 @@ defmodule GiocciEngineZenoh do
       session: session
     }
 
-    IO.inspect(String.to_atom(id_string))
-    IO.inspect("from/" <> relay_name <> "/to/" <> engine_name)
+    Logger.info("from/" <> relay_name <> "/to/" <> engine_name)
     ## 上記の状態を保存する用のGenServerの起動
     GenServer.start_link(__MODULE__, state, name: String.to_atom(id_string))
     ## subの開始
-    recv_timeout(state)
+    subscriber_loop(state)
     {:ok, state}
   end
 
@@ -62,15 +54,15 @@ defmodule GiocciEngineZenoh do
     } = message
 
     ## msgをバイナリからlistにもどす
-    readable_msg =
+    message_readable =
       message_intermediate
       |> String.trim()
       |> Base.decode64!()
       |> :erlang.binary_to_term()
 
-    case readable_msg do
+    case message_readable do
       ## module_execの場合
-      [module, function, arity, :module_exec] = readable_msg ->
+      [module, function, arity, :module_exec] = message_readable ->
         #  module_execする
         module_result_reply = apply(module, function, arity)
 
@@ -81,7 +73,7 @@ defmodule GiocciEngineZenoh do
         )
 
       ## module_saveの場合
-      [encode_module, :module_save] = readable_msg ->
+      [encode_module, :module_save] = message_readable ->
         ## Module_Saveを保存しロードする
         module_save_reply = module_load_and_save({:module_save, encode_module})
         ## ロード結果を(Relayを通して)Clientに返す
@@ -90,8 +82,8 @@ defmodule GiocciEngineZenoh do
           module_save_reply |> :erlang.term_to_binary() |> Base.encode64()
         )
 
-      _ = readable_msg ->
-        IO.inspect("no match")
+      _ = message_readable ->
+        Logger.error(inspect("no match"))
     end
   end
 
@@ -107,14 +99,12 @@ defmodule GiocciEngineZenoh do
       |> Enum.join("_")
       |> String.to_atom()
 
-    CubDB.put(ModuleDB, name_snake, %{encode_module: encode_module, register_at: get_datetime()})
-
     Giocci.CLI.ModuleConverter.load({name, binary, path})
   end
 
   def handle_info(:loop, state) do
     # subをループするhandle_info
-    recv_timeout(state)
+    subscriber_loop(state)
     {:noreply, state}
   end
 
@@ -130,26 +120,7 @@ defmodule GiocciEngineZenoh do
     create_session(n - 1)
   end
 
-  defp get_datetime() do
-    {{year, month, day}, {time, min, sec}} = :calendar.local_time()
-
-    datetime =
-      "#{year}" <>
-        "/" <>
-        String.pad_leading("#{month}", 2, "0") <>
-        "/" <>
-        String.pad_leading("#{day}", 2, "0") <>
-        " " <>
-        String.pad_leading("#{time}", 2, "0") <>
-        ":" <>
-        String.pad_leading("#{min}", 2, "0") <>
-        ":" <>
-        String.pad_leading("#{sec}", 2, "0")
-
-    datetime
-  end
-
-  defp recv_timeout(state) do
+  defp subscriber_loop(state) do
     ## subを永続化する関数
 
     case Zenohex.Subscriber.recv_timeout(state.subscriber, 10_000) do
