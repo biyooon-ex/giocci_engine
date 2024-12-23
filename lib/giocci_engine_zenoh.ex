@@ -4,13 +4,11 @@ defmodule GiocciEngineZenoh do
   use GenServer
   require Logger
 
-  alias GiocciEngine.ModuleDB
-
   def setup_engine() do
     ## 最初に指定された数のRelayノードとのZenohコネクションを作成する
-    relay_number_string = System.get_env("NODE_RELAY_NUMBER")
-    relay_number = String.to_integer(relay_number_string)
-    create_session(relay_number)
+    System.get_env("NODE_RELAY_NUMBER")
+    |> String.to_integer()
+    |> create_session()
   end
 
   def start_link(relay_name, number) do
@@ -26,7 +24,7 @@ defmodule GiocciEngineZenoh do
     {:ok, publisher} =
       Zenohex.Session.declare_publisher(session, "from/" <> engine_name <> "/to/" <> relay_name)
 
-    id_string = "Relay2Engine2Relaysession" <> number
+    id_string = "session" <> number
     ## 状態として次の状態をもつ
     state = %{
       publisher: publisher,
