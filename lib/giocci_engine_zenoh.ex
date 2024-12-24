@@ -6,15 +6,14 @@ defmodule GiocciEngineZenoh do
 
   def setup_engine() do
     ## 最初に指定された数のRelayノードとのZenohコネクションを作成する
-    System.get_env("NODE_RELAY_NUMBER")
-    |> String.to_integer()
-    |> create_session()
+    create_session(Application.get_env(:giocci_engine_zenoh, :system_variables)[:relay_node_name])
   end
 
-  def start_link(relay_name, number) do
+  def start_link(relay_name) do
     ## RelayからEngineを通ってRelayに返送するsubとpubをセットアップする
     ## EngineのZenohセッションを起動
-    engine_name = System.get_env("MY_NODE_NAME")
+    engine_name = Application.get_env(:giocci_engine_zenoh, :system_variables)[:my_node_name]
+
     {:ok, session} = Zenohex.open()
     ## pub,subそれぞれのキーをたてる
 
@@ -24,7 +23,7 @@ defmodule GiocciEngineZenoh do
     {:ok, publisher} =
       Zenohex.Session.declare_publisher(session, "from/" <> engine_name <> "/to/" <> relay_name)
 
-    id_string = "session" <> number
+    id_string = engine_name
     ## 状態として次の状態をもつ
     state = %{
       publisher: publisher,
@@ -106,16 +105,15 @@ defmodule GiocciEngineZenoh do
     {:noreply, state}
   end
 
-  defp create_session(0) do
+  defp create_session([]) do
     :ok
   end
 
-  defp create_session(n) do
-    ## セッションをｎ個作る関数
-    number = Integer.to_string(n)
-    relay_name = System.get_env("NODE_RELAY_NAME" <> number)
-    start_link(relay_name, number)
-    create_session(n - 1)
+  defp create_session(relay_list) do
+    ## セッションを作る関数
+    [relay_name | tail] = relay_list
+    start_link(relay_name)
+    create_session(tail)
   end
 
   defp subscriber_loop(state) do
