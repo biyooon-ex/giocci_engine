@@ -4,13 +4,21 @@ defmodule GiocciEngineZenoh do
   use GenServer
   require Logger
 
+  @doc """
+  最初に指定されたRelayノードとのZenohコネクションを作成する
+
+  """
+
   def setup_engine() do
-    ## 最初に指定された数のRelayノードとのZenohコネクションを作成する
     create_session(Application.get_env(:giocci_engine_zenoh, :system_variables)[:relay_node_name])
   end
 
+  @doc """
+    RelayからEngineを通ってRelayに返送するsubとpubをセットアップする
+
+  """
+
   def start_link(relay_name) do
-    ## RelayからEngineを通ってRelayに返送するsubとpubをセットアップする
     ## EngineのZenohセッションを起動
     engine_name = Application.get_env(:giocci_engine_zenoh, :system_variables)[:my_node_name]
 
@@ -41,8 +49,12 @@ defmodule GiocciEngineZenoh do
     {:ok, state}
   end
 
+  @doc """
+  Clientから送られたデータを解析して、実行する
+
+  """
+
   def callback(state, message) do
-    ## Clientから送られたデータを解析して、実行する
     %{
       key_expr: erkey,
       value: message_intermediate,
@@ -99,8 +111,12 @@ defmodule GiocciEngineZenoh do
     Giocci.CLI.ModuleConverter.load({name, binary, path})
   end
 
+  @doc """
+    subをループするhandle_info
+
+  """
+
   def handle_info(:loop, state) do
-    # subをループするhandle_info
     subscriber_loop(state)
     {:noreply, state}
   end
@@ -109,16 +125,23 @@ defmodule GiocciEngineZenoh do
     :ok
   end
 
+  @doc """
+    セッションを作る関数
+
+  """
+
   defp create_session(relay_list) do
-    ## セッションを作る関数
     [relay_name | tail] = relay_list
     start_link(relay_name)
     create_session(tail)
   end
 
-  defp subscriber_loop(state) do
-    ## subを永続化する関数
+  @doc """
+  subを永続化する関数
 
+  """
+
+  defp subscriber_loop(state) do
     case Zenohex.Subscriber.recv_timeout(state.subscriber, 10_000) do
       {:ok, sample} ->
         state.callback.(state, sample)
