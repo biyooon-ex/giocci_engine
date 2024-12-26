@@ -6,7 +6,6 @@ defmodule GiocciEngineZenoh do
 
   @doc """
   最初に指定されたRelayノードとのZenohコネクションを作成する
-
   """
 
   def setup_engine() do
@@ -48,8 +47,8 @@ defmodule GiocciEngineZenoh do
     {:ok, state}
   end
 
+  ##   Clientから送られたデータを解析して、実行する
   def callback(state, message) do
-    ##   Clientから送られたデータを解析して、実行する
     %{
       key_expr: erkey,
       value: message_intermediate,
@@ -106,10 +105,7 @@ defmodule GiocciEngineZenoh do
     Giocci.CLI.ModuleConverter.load({name, binary, path})
   end
 
-  @doc """
-    subをループするhandle_info
-  """
-
+  ##     subをループするhandle_info
   def handle_info(:loop, state) do
     subscriber_loop(state)
     {:noreply, state}
@@ -119,15 +115,15 @@ defmodule GiocciEngineZenoh do
     :ok
   end
 
+  ## セッションを作る関数
   defp create_session(relay_list) do
-    ## セッションを作る関数
     [relay_name | tail] = relay_list
     start_link(relay_name)
     create_session(tail)
   end
 
+  ##   subを永続化する関数
   defp subscriber_loop(state) do
-    ##   subを永続化する関数\
     case Zenohex.Subscriber.recv_timeout(state.subscriber, 10_000) do
       {:ok, sample} ->
         state.callback.(state, sample)
