@@ -12,7 +12,7 @@ defmodule GiocciEngineZenoh do
   end
 
   @doc """
-    RelayからEngineを通ってRelayに返送するsubとpubをセットアップする
+    RelayからEngineを通ってRelayに返送するsubとpubを作成する
   """
   def start_link(relay_name) do
     engine_name = Application.get_env(:giocci_engine_zenoh, :system_variables)[:my_node_name]
@@ -44,7 +44,9 @@ defmodule GiocciEngineZenoh do
     {:ok, state}
   end
 
+  @doc """
   ##   Clientから送られたデータを解析して、実行する
+  """
   def callback(state, message) do
     %{
       key_expr: erkey,
@@ -68,7 +70,7 @@ defmodule GiocciEngineZenoh do
         ## 実行結果を(Relayを通して)Clientに返す
         Zenohex.Publisher.put(
           state.publisher,
-          (module_result_reply <> " from engine") |> :erlang.term_to_binary() |> Base.encode64()
+          [module_result_reply, " from engine"] |> :erlang.term_to_binary() |> Base.encode64()
         )
 
       ## module_saveの場合
