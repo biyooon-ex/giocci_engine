@@ -66,7 +66,7 @@ defmodule GiocciEngineZenoh do
       ## module_execの場合
       [module, function, arity, :module_exec] = message_readable ->
         #  module_execする
-        module_result_reply = apply(module, function, arity)
+        module_result_reply = :timer.tc(module, function, arity)
         ## 実行結果を(Relayを通して)Clientに返す
         Zenohex.Publisher.put(
           state.publisher,
