@@ -78,9 +78,11 @@ defmodule GiocciEngineZenoh do
         ## Module_Saveを保存しロードする
         module_save_reply = module_load_and_save({:module_save, encode_module})
         ## ロード結果を(Relayを通して)Clientに返す
+        module_save_pack = [{1_000_000, module_save_reply}, "dummy"]
+
         Zenohex.Publisher.put(
           state.publisher,
-          module_save_reply |> :erlang.term_to_binary() |> Base.encode64()
+          module_save_pack |> :erlang.term_to_binary() |> Base.encode64()
         )
 
       _ = message_readable ->
