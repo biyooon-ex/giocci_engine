@@ -66,7 +66,7 @@ defmodule GiocciEngineZenoh do
       ## module_execの場合
       [module, function, arity, :module_exec] = message_readable ->
         #  module_execする
-        module_result_reply = :timer.tc(module, function, arity)
+        module_result_reply = apply(module, function, arity)
         ## 実行結果を(Relayを通して)Clientに返す
         Zenohex.Publisher.put(
           state.publisher,
@@ -78,7 +78,7 @@ defmodule GiocciEngineZenoh do
         ## Module_Saveを保存しロードする
         module_save_reply = module_load_and_save({:module_save, encode_module})
         ## ロード結果を(Relayを通して)Clientに返す
-        module_save_pack = [{1_000_000, module_save_reply}, "dummy"]
+        module_save_pack = [[1_000_000, module_save_reply], "dummy"]
 
         Zenohex.Publisher.put(
           state.publisher,
