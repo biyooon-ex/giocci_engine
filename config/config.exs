@@ -2,7 +2,7 @@ import Config
 
 config :giocci_engine_zenoh, :system_variables,
   my_node_name: "engine1",
-  relay_node_name: ["relay1", "relay2", "relay3"]
+  relay_node_name: ["relay1"]
 
 config :giocci_engine, :system_variables,
   node_name: "engine",
