@@ -44,6 +44,10 @@ defmodule GiocciEngineZenoh do
     {:ok, state}
   end
 
+  def init(init_arg) do
+    {:ok, init_arg}
+  end
+
   @doc """
   ##   Clientから送られたデータを解析して、実行する
   """
