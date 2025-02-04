@@ -48,23 +48,16 @@ defmodule GiocciEngineZenoh do
   ##   Clientから送られたデータを解析して、実行する
   """
   def callback(state, message) do
-    %{
-      key_expr: erkey,
-      value: message_intermediate,
-      kind: kind,
-      reference: reference
-    } = message
-
     ## msgをバイナリからlistにもどす
     message_readable =
-      message_intermediate
+      Map.get(message, :message_intermediate)
       |> String.trim()
       |> Base.decode64!()
       |> :erlang.binary_to_term()
 
     case message_readable do
       ## module_execの場合
-      [module, function, arity, :module_exec] = message_readable ->
+      [module, function, arity, :module_exec] ->
         #  module_execする
         module_result_reply = apply(module, function, arity)
         ## 実行結果を(Relayを通して)Clientに返す
@@ -74,7 +67,7 @@ defmodule GiocciEngineZenoh do
         )
 
       ## module_saveの場合
-      [encode_module, :module_save] = message_readable ->
+      [encode_module, :module_save] ->
         ## Module_Saveを保存しロードする
         module_save_reply = module_load_and_save({:module_save, encode_module})
         ## ロード結果を(Relayを通して)Clientに返す
@@ -83,7 +76,7 @@ defmodule GiocciEngineZenoh do
           module_save_reply |> :erlang.term_to_binary() |> Base.encode64()
         )
 
-      _ = message_readable ->
+      _ ->
         Logger.error(inspect("no match"))
     end
   end
@@ -93,12 +86,6 @@ defmodule GiocciEngineZenoh do
       Giocci.CLI.ModuleConverter.decode(encode_module)
 
     Logger.info("v module: #{inspect(name)} is loaded.")
-
-    name_snake =
-      name
-      |> Module.split()
-      |> Enum.join("_")
-      |> String.to_atom()
 
     Giocci.CLI.ModuleConverter.load({name, binary, path})
   end
