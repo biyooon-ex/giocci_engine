@@ -21,10 +21,16 @@ defmodule GiocciEngineZenoh do
 
     ## pub,subそれぞれのキーをたてる
     {:ok, subscriber} =
-      Zenohex.Session.declare_subscriber(session, "from/" <> relay_name <> "/to/" <> engine_name)
+      Zenohex.Session.declare_subscriber(
+        session,
+        "key_prefix/giocci/relay_to_engine/" <> relay_name <> "/" <> engine_name
+      )
 
     {:ok, publisher} =
-      Zenohex.Session.declare_publisher(session, "from/" <> engine_name <> "/to/" <> relay_name)
+      Zenohex.Session.declare_publisher(
+        session,
+        "key_prefix/giocci/engine_to_relay/" <> engine_name <> "/" <> relay_name
+      )
 
     id_string = engine_name
     ## 状態として次の状態をもつ
@@ -36,7 +42,7 @@ defmodule GiocciEngineZenoh do
       session: session
     }
 
-    Logger.info("from/" <> relay_name <> "/to/" <> engine_name)
+    Logger.info("key_prefix/giocci/relay_to_engine/" <> engine_name)
     ## 上記の状態を保存する用のGenServerの起動
     GenServer.start_link(__MODULE__, state, name: String.to_atom(id_string))
     ## subの開始
