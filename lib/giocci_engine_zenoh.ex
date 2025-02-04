@@ -23,13 +23,13 @@ defmodule GiocciEngineZenoh do
     {:ok, subscriber} =
       Zenohex.Session.declare_subscriber(
         session,
-        "key_prefix/giocci/relay_to_engine/" <> engine_name
+        "key_prefix/giocci/relay_to_engine/" <> relay_name <> "/" <> engine_name
       )
 
     {:ok, publisher} =
       Zenohex.Session.declare_publisher(
         session,
-        "key_prefix/giocci/engine_to_relay/" <> relay_name
+        "key_prefix/giocci/engine_to_relay/" <> engine_name <> "/" <> relay_name
       )
 
     id_string = engine_name
