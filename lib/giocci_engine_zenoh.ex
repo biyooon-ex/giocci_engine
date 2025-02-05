@@ -142,7 +142,7 @@ defmodule GiocciEngineZenoh do
     do: Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:relay_node_list]
 
   defp key_prefix() do
-    prefix = Application.fetch_env!(:giocci, :giocci_zenoh)[:key_prefix]
+    prefix = Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:key_prefix]
 
     if prefix == "" do
       ""
