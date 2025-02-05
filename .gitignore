@@ -30,3 +30,6 @@ giocci_engine-*.tar
 
 # color theme
 .vscode/settings.json
+
+# Sample file for Giocci configuration in your application
+.env
