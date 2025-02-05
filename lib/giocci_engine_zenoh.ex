@@ -60,7 +60,7 @@ defmodule GiocciEngineZenoh do
   def callback(state, message) do
     ## msgをバイナリからlistにもどす
     message_readable =
-      Map.get(message, :message_intermediate)
+      Map.get(message, :value)
       |> String.trim()
       |> Base.decode64!()
       |> :erlang.binary_to_term()
