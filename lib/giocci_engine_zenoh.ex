@@ -23,13 +23,13 @@ defmodule GiocciEngineZenoh do
     {:ok, subscriber} =
       Zenohex.Session.declare_subscriber(
         session,
-        "key_prefix/giocci/relay_to_engine/" <> relay_name <> "/" <> engine_name
+        key_prefix() <> "giocci/relay_to_engine/" <> relay_name <> "/" <> engine_name
       )
 
     {:ok, publisher} =
       Zenohex.Session.declare_publisher(
         session,
-        "key_prefix/giocci/engine_to_relay/" <> engine_name <> "/" <> relay_name
+        key_prefix() <> "giocci/engine_to_relay/" <> engine_name <> "/" <> relay_name
       )
 
     id_string = engine_name
@@ -42,7 +42,7 @@ defmodule GiocciEngineZenoh do
       session: session
     }
 
-    Logger.info("key_prefix/giocci/relay_to_engine/" <> engine_name)
+    Logger.info(key_prefix() <> "giocci/relay_to_engine/" <> engine_name)
     ## 上記の状態を保存する用のGenServerの起動
     GenServer.start_link(__MODULE__, state, name: String.to_atom(id_string))
     ## subの開始
@@ -141,6 +141,13 @@ defmodule GiocciEngineZenoh do
   defp relay_node_list(),
     do: Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:relay_node_list]
 
-  defp key_prefix(),
-    do: Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:key_prefix]
+  defp key_prefix() do
+    prefix = Application.fetch_env!(:giocci, :giocci_zenoh)[:key_prefix]
+
+    if prefix == "" do
+      ""
+    else
+      prefix <> "/"
+    end
+  end
 end
