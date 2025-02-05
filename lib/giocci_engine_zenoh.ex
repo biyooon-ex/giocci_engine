@@ -136,8 +136,8 @@ defmodule GiocciEngineZenoh do
   end
 
   defp my_engine_node_name(),
-    do: Application.fetch_env!(:giocci, :giocci_engine_zenoh)[:my_engine_node_name]
+    do: Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:my_node_name]
 
   defp relay_node_list(),
-    do: Application.fetch_env!(:giocci, :giocci_engine_zenoh)[:relay_node_list]
+    do: Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:relay_node_list]
 end
