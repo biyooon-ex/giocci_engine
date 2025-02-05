@@ -8,14 +8,14 @@ defmodule GiocciEngineZenoh do
   最初に指定されたRelayノードとのZenohコネクションを作成する
   """
   def setup_engine() do
-    create_session(Application.get_env(:giocci_engine_zenoh, :system_variables)[:relay_node_name])
+    create_session(relay_node_list())
   end
 
   @doc """
     RelayからEngineを通ってRelayに返送するsubとpubを作成する
   """
   def start_link(relay_name) do
-    engine_name = Application.get_env(:giocci_engine_zenoh, :system_variables)[:my_node_name]
+    engine_name = my_engine_node_name()
     ## EngineのZenohセッションを起動
     {:ok, session} = Zenohex.open()
 
@@ -134,4 +134,10 @@ defmodule GiocciEngineZenoh do
         Logger.error("unexpected error")
     end
   end
+
+  defp my_engine_node_name(),
+    do: Application.fetch_env!(:giocci, :giocci_engine_zenoh)[:my_engine_node_name]
+
+  defp relay_node_list(),
+    do: Application.fetch_env!(:giocci, :giocci_engine_zenoh)[:relay_node_list]
 end
