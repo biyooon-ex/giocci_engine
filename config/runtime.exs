@@ -13,4 +13,5 @@ config :giocci_engine, :giocci_engine_zenoh,
   my_node_name: env!("MY_ENGINE_NODE_NAME", :string, "engine1"),
   # The nodes' name for Giocci relays
   relay_node_list:
-    env!("RELAY_NODE_NAME", :string, "relay1, relay2, relay3") |> String.split(~r/[ ,]+/)
+    env!("RELAY_NODE_NAME", :string, "relay1, relay2, relay3") |> String.split(~r/[ ,]+/),
+  key_prefix: env!("KEY_PREFIX", :string, "")
