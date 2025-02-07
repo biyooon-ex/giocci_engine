@@ -32,4 +32,6 @@ giocci_engine-*.tar
 .vscode/settings.json
 
 # Sample file for Giocci configuration in your application
-.env
+# Note that this file is usually gitignored to keep your servers
+# information secret. This is just an example show, so we did not do so.
+# .env

@@ -9,17 +9,28 @@ defmodule GiocciEngine.Application do
   def start(_type, _args) do
     {my_process_name, _} = System.get_env("MY_PROCESS_NAME") |> Code.eval_string()
 
-    children = [
-      # Starts a worker by calling: GiocciEngine.Worker.start_link(arg)
-      # {GiocciEngine.Worker, arg}
-      Supervisor.child_spec({CubDB, [data_dir: "./cubdb/database", name: GiocciEngine.Database]},
-        id: :database
-      ),
-      Supervisor.child_spec({CubDB, [data_dir: "./cubdb/module_db", name: GiocciEngine.ModuleDB]},
-        id: :module_db
-      ),
-      {GiocciEngine.Cubdb.Store, [my_process_name, []]}
-    ]
+    # TODO: RelayのリストはDotenvyから読み込むようにする
+    relays = ["relay1", "relay2", "relay3"]
+
+    giocci_engine_zenoh_child =
+      for relay <- relays do
+        Supervisor.child_spec({GiocciEngineZenoh, relay}, id: String.to_atom(relay))
+      end
+
+    children =
+      [
+        # Starts a worker by calling: GiocciEngine.Worker.start_link(arg)
+        # {GiocciEngine.Worker, arg}
+        Supervisor.child_spec(
+          {CubDB, [data_dir: "./cubdb/database", name: GiocciEngine.Database]},
+          id: :database
+        ),
+        Supervisor.child_spec(
+          {CubDB, [data_dir: "./cubdb/module_db", name: GiocciEngine.ModuleDB]},
+          id: :module_db
+        ),
+        {GiocciEngine.Cubdb.Store, [my_process_name, []]}
+      ] ++ giocci_engine_zenoh_child
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

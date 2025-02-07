@@ -32,7 +32,8 @@ defmodule GiocciEngineZenoh do
         key_prefix() <> "giocci/engine_to_relay/" <> engine_name <> "/" <> relay_name
       )
 
-    id_string = engine_name
+    id_string = engine_name <> relay_name
+
     ## 状態として次の状態をもつ
     state = %{
       publisher: publisher,
@@ -45,13 +46,12 @@ defmodule GiocciEngineZenoh do
     Logger.info(key_prefix() <> "giocci/relay_to_engine/" <> engine_name)
     ## 上記の状態を保存する用のGenServerの起動
     GenServer.start_link(__MODULE__, state, name: String.to_atom(id_string))
-    ## subの開始
-    subscriber_loop(state)
-    {:ok, state}
   end
 
-  def init(init_arg) do
-    {:ok, init_arg}
+  def init(state) do
+    subscriber_loop(state)
+
+    {:ok, state}
   end
 
   @doc """
