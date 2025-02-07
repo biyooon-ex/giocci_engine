@@ -8,25 +8,32 @@ defmodule GiocciEngineZenoh do
   最初に指定されたRelayノードとのZenohコネクションを作成する
   """
   def setup_engine() do
-    create_session(Application.get_env(:giocci_engine_zenoh, :system_variables)[:relay_node_name])
+    create_session(relay_node_list())
   end
 
   @doc """
     RelayからEngineを通ってRelayに返送するsubとpubを作成する
   """
   def start_link(relay_name) do
-    engine_name = Application.get_env(:giocci_engine_zenoh, :system_variables)[:my_node_name]
+    engine_name = my_engine_node_name()
     ## EngineのZenohセッションを起動
     {:ok, session} = Zenohex.open()
 
     ## pub,subそれぞれのキーをたてる
     {:ok, subscriber} =
-      Zenohex.Session.declare_subscriber(session, "from/" <> relay_name <> "/to/" <> engine_name)
+      Zenohex.Session.declare_subscriber(
+        session,
+        key_prefix() <> "giocci/relay_to_engine/" <> relay_name <> "/" <> engine_name
+      )
 
     {:ok, publisher} =
-      Zenohex.Session.declare_publisher(session, "from/" <> engine_name <> "/to/" <> relay_name)
+      Zenohex.Session.declare_publisher(
+        session,
+        key_prefix() <> "giocci/engine_to_relay/" <> engine_name <> "/" <> relay_name
+      )
 
-    id_string = engine_name
+    id_string = engine_name <> relay_name
+
     ## 状態として次の状態をもつ
     state = %{
       publisher: publisher,
@@ -36,11 +43,14 @@ defmodule GiocciEngineZenoh do
       session: session
     }
 
-    Logger.info("from/" <> relay_name <> "/to/" <> engine_name)
+    Logger.info(key_prefix() <> "giocci/relay_to_engine/" <> engine_name)
     ## 上記の状態を保存する用のGenServerの起動
     GenServer.start_link(__MODULE__, state, name: String.to_atom(id_string))
-    ## subの開始
+  end
+
+  def init(state) do
     subscriber_loop(state)
+
     {:ok, state}
   end
 
@@ -48,23 +58,16 @@ defmodule GiocciEngineZenoh do
   ##   Clientから送られたデータを解析して、実行する
   """
   def callback(state, message) do
-    %{
-      key_expr: erkey,
-      value: message_intermediate,
-      kind: kind,
-      reference: reference
-    } = message
-
     ## msgをバイナリからlistにもどす
     message_readable =
-      message_intermediate
+      Map.get(message, :value)
       |> String.trim()
       |> Base.decode64!()
       |> :erlang.binary_to_term()
 
     case message_readable do
       ## module_execの場合
-      [module, function, arity, :module_exec] = message_readable ->
+      [module, function, arity, :module_exec] ->
         #  module_execする
         module_result_reply = apply(module, function, arity)
         ## 実行結果を(Relayを通して)Clientに返す
@@ -74,7 +77,7 @@ defmodule GiocciEngineZenoh do
         )
 
       ## module_saveの場合
-      [encode_module, :module_save] = message_readable ->
+      [encode_module, :module_save] ->
         ## Module_Saveを保存しロードする
         module_save_reply = module_load_and_save({:module_save, encode_module})
         ## ロード結果を(Relayを通して)Clientに返す
@@ -83,7 +86,7 @@ defmodule GiocciEngineZenoh do
           module_save_reply |> :erlang.term_to_binary() |> Base.encode64()
         )
 
-      _ = message_readable ->
+      _ ->
         Logger.error(inspect("no match"))
     end
   end
@@ -93,12 +96,6 @@ defmodule GiocciEngineZenoh do
       Giocci.CLI.ModuleConverter.decode(encode_module)
 
     Logger.info("v module: #{inspect(name)} is loaded.")
-
-    name_snake =
-      name
-      |> Module.split()
-      |> Enum.join("_")
-      |> String.to_atom()
 
     Giocci.CLI.ModuleConverter.load({name, binary, path})
   end
@@ -135,6 +132,22 @@ defmodule GiocciEngineZenoh do
 
       {_, _} ->
         Logger.error("unexpected error")
+    end
+  end
+
+  defp my_engine_node_name(),
+    do: Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:my_node_name]
+
+  defp relay_node_list(),
+    do: Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:relay_node_list]
+
+  defp key_prefix() do
+    prefix = Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:key_prefix]
+
+    if prefix == "" || prefix == nil do
+      ""
+    else
+      prefix <> "/"
     end
   end
 end
