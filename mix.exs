@@ -4,7 +4,7 @@ defmodule GiocciEngine.MixProject do
   def project do
     [
       app: :giocci_engine,
-      version: "0.3.0-rc1",
+      version: "0.3.0-rc2",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps()
