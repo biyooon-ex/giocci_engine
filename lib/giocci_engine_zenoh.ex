@@ -8,14 +8,14 @@ defmodule GiocciEngineZenoh do
   最初に指定されたRelayノードとのZenohコネクションを作成する
   """
   def setup_engine() do
-    create_session(Application.get_env(:giocci_engine_zenoh, :system_variables)[:relay_node_name])
+    create_session(relay_node_list())
   end
 
   @doc """
     RelayからEngineを通ってRelayに返送するsubとpubを作成する
   """
   def start_link(relay_name) do
-    engine_name = Application.get_env(:giocci_engine_zenoh, :system_variables)[:my_node_name]
+    engine_name = my_engine_node_name()
     ## EngineのZenohセッションを起動
     {:ok, session} = Zenohex.open()
 
@@ -23,13 +23,13 @@ defmodule GiocciEngineZenoh do
     {:ok, subscriber} =
       Zenohex.Session.declare_subscriber(
         session,
-        "key_prefix/giocci/relay_to_engine/" <> relay_name <> "/" <> engine_name
+        key_prefix() <> "giocci/relay_to_engine/" <> relay_name <> "/" <> engine_name
       )
 
     {:ok, publisher} =
       Zenohex.Session.declare_publisher(
         session,
-        "key_prefix/giocci/engine_to_relay/" <> engine_name <> "/" <> relay_name
+        key_prefix() <> "giocci/engine_to_relay/" <> engine_name <> "/" <> relay_name
       )
 
     id_string = engine_name <> relay_name
@@ -43,7 +43,8 @@ defmodule GiocciEngineZenoh do
       session: session
     }
 
-    Logger.info("key_prefix/giocci/relay_to_engine/" <> engine_name)
+    Logger.info(key_prefix() <> "giocci/relay_to_engine/" <> engine_name)
+    ## 上記の状態を保存する用のGenServerの起動
     GenServer.start_link(__MODULE__, state, name: String.to_atom(id_string))
   end
 
@@ -131,6 +132,22 @@ defmodule GiocciEngineZenoh do
 
       {_, _} ->
         Logger.error("unexpected error")
+    end
+  end
+
+  defp my_engine_node_name(),
+    do: Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:my_node_name]
+
+  defp relay_node_list(),
+    do: Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:relay_node_list]
+
+  defp key_prefix() do
+    prefix = Application.fetch_env!(:giocci_engine, :giocci_engine_zenoh)[:key_prefix]
+
+    if prefix == "" || prefix == nil do
+      ""
+    else
+      prefix <> "/"
     end
   end
 end
