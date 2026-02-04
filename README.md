@@ -1,3 +1,6 @@
+# 本リポジトリが提供する機能は2026年2月より [giocci_platform](https://github.com/biyooon-ex/giocci_platform) の一部として統合しました．Public archive に変更して今後は本リポジトリでの管理を行いません．
+# This repository's features will be integrated into [giocci_platform](https://github.com/biyooon-ex/giocci_platform) starting February 2026. It will be changed to a public archive and will no longer be maintained here.
+
 # GiocciEngine
 
 ## 起動方法
